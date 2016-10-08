@@ -18,9 +18,6 @@
 #define sizeX 77// количество символов консоли по горизонтали, в циклах для буфера Scrn - вторая координата (соответствует j)
 #define sizeY 32// количество символов консоли по вертикали, в циклах для буфера Scrn - первая координата (соответствует i)
 
-const int LenStr=30;
-const int StrCount=10;
-
 struct CharAttr
 {
 	unsigned char Symbol;
@@ -84,10 +81,6 @@ bool MoveHead(Ghost *Head, CharAttr Scrn[sizeY][sizeX], int Key, COORD &StartPos
 void PrintChr(COORD Pos, unsigned char Clr, unsigned char Smbl);
 void PrintStr(COORD Pos, unsigned char Clr, char *Str);
 void Filling(CharAttr Scrn[sizeY][sizeX], Ghost *Ghs,  unsigned int &Score, unsigned int &FieldCount);
-void ReadRecords(char NameList[StrCount][LenStr], unsigned int ScoreList[StrCount]);
-void ChangeRecords(unsigned int &Score);
-void Records(COORD &SizeWin, unsigned int &Score,char NameList[StrCount][LenStr], unsigned int ScoreList[StrCount]);
-void ShowRecords(COORD SizeWin, char NameList[StrCount][LenStr], unsigned int ScoreList[StrCount], unsigned int &Score, short int Index);
 
 int main()
 {
@@ -97,14 +90,12 @@ int main()
 int shell()
 {
 	COORD SizeWin;
-
-	unsigned int Score=0;
-	unsigned int ScoreList[StrCount];
+	
 	int ItN = 0;
+	unsigned int Score;
 
 	char GoodBye[] = "Всего хорошего!";
-	char NameList[StrCount][LenStr];
-	
+
 	TA.BorderTextAttr = 0x07;
 	TA.SelTextAttr = 0x70;
 	TA.LightTextAttr = 0x0f;
@@ -116,7 +107,6 @@ int shell()
 	TA.TextAttr = 0x07;
 
 	PreSet(SizeWin);
-	ReadRecords(NameList, ScoreList);
 	while(1)
 	{
 		Menu(SizeWin, ItN);
@@ -126,16 +116,17 @@ int shell()
 				{
 					//ЗДЕСЬ ФУНКЦИЯ PLAY()
 					Play(SizeWin, Score);	
-					//break;
+					break;
 				}
 			case 1:// RECORDS()
 				{
-					
-					
-					Records( SizeWin, Score, NameList, ScoreList);
+					mciSendString(L"play sound\\рекорды.mp3 repeat",0,0,0);
+
 					//ЗДЕСЬ ФУНКЦИЯ RECORDS()
 
-							
+					system("cls");
+					getch();
+					mciSendString(L"stop sound\\рекорды.mp3",0,0,0);		
 					break;
 				}
 			case 2:// SETTINGS()
@@ -323,12 +314,14 @@ int Play(COORD SizeWin, unsigned int &Score)
 	FILE* LvlFile;
 
 	Ghost Ghs[GN];
+	Ghost Head;
 
 	CharAttr Scrn[sizeY][sizeX];
 	//////////////////////////////////////////24 клетки под каждую муху
 	
 	Lvl=1;
 	do{
+		
 		minTime=60-(Lvl-1)*6;
 		itoa(Lvl,LvlFileName,10);
 		strcat(LvlFileName,LvlFileExt);
@@ -536,6 +529,12 @@ int Play(COORD SizeWin, unsigned int &Score)
 	return 0;
 }
 
+void Records()
+{
+	FILE* RecFile;
+
+}
+
 bool MoveGhosts(Ghost Ghs[], CharAttr Scrn[sizeY][sizeX])
 {
 	int i;
@@ -675,7 +674,7 @@ bool MoveGhosts(Ghost Ghs[], CharAttr Scrn[sizeY][sizeX])
 
 bool MoveHead(Ghost *Head, CharAttr Scrn[sizeY][sizeX], int Key, COORD &StartPos, COORD &TopLeft, COORD &BottRight, unsigned int &Score, unsigned int &FieldCount)
 {
-	//int i;
+	int i;
 	COORD Next;
 	bool GameOver = 0;
 	
@@ -1461,118 +1460,4 @@ void Filling(CharAttr Scrn[sizeY][sizeX], Ghost *Ghs, unsigned int &Score, unsig
 	itoa(Score,strScore,10);
 	PrintStr(Pos, TA.XTextAttr, strScore);
 				
-}
-
-void ReadRecords(char NameList[StrCount][LenStr], unsigned int ScoreList[StrCount])
-{
-	int i,j,k;
-
-	FILE* RecFile;
-
-	char RecFileName[]="levels\\records.txt";
-	char str[LenStr], str2[LenStr];
-
-	RecFile = fopen (RecFileName,"r");
-	if(RecFile != 0)
-	{
-		for(i=0; i<StrCount; i++)
-		{ 
-			fgets(str, LenStr, RecFile);
-			for(j=0; str[j] != '\t'; j++)
-			{
-				NameList[i][j]=str[j];
-			}
-			NameList[i][j++]='\0';
-			
-			for(k=0; str[j]>47 && str[j]<58;k++, j++)
-			{
-				str2[k]=str[j];
-			}
-			str2[k]='\0';
-			ScoreList[i] = atoi(str2);
-		}
-		
-		fclose(RecFile);
-	}
-
-}
-
-void ChangeRecords(unsigned int &Score)
-{
-	
-
-}
-
-void Records(COORD &SizeWin, unsigned int &Score,char NameList[StrCount][LenStr], unsigned int ScoreList[StrCount])
-{
-	short int i;
-	unsigned int tmp;
-	char Name[21]="Вы",str[21]="";
-
-	mciSendString(L"play sound\\рекорды.mp3 repeat",0,0,0);
-	system("cls");
-	
-	if(Score==0)
-	{
-		ShowRecords(SizeWin, NameList, ScoreList, Score, -1);
-	}
-	else
-	{
-		if(ScoreList[StrCount-1]<Score)
-		{
-			ScoreList[StrCount-1] = Score;
-			strcpy(NameList[StrCount-1], Name);
-			for(i=StrCount-2; (ScoreList[i]<Score) && (i>-1); i--)
-			{
-				tmp=ScoreList[i];
-				ScoreList[i]=ScoreList[i+1];
-				ScoreList[i+1]=tmp;
-
-				strcpy(str,NameList[i]);
-				strcpy(NameList[i],NameList[i+1]);
-				strcpy(NameList[i+1],str);
-			}
-		}
-		ShowRecords(SizeWin, NameList, ScoreList, Score, i+1);
-	}
-	while(1)
-	{
-		if(getch() == KEsc)
-		{
-			system("cls");
-			mciSendString(L"stop sound\\рекорды.mp3",0,0,0);
-			Score=0;
-			return;
-		}
-	}
-	
-}
-
-void ShowRecords(COORD SizeWin, char NameList[StrCount][LenStr],unsigned int  ScoreList[StrCount], unsigned int &Score, short int Index)
-{
-	int i;
-	COORD Pos;
-
-	SizeWin.Y=(SizeWin.Y-20)/2;
-	SizeWin.X=SizeWin.X/2-10;
-	SetConsoleTextAttribute(handle,TA.BorderTextAttr);
-	for(i=0; i<StrCount; i++)
-	{
-		Pos.X=SizeWin.X;
-		Pos.Y=SizeWin.Y+2*i;
-		GotoXY(Pos);
-		if(Index == i)
-		{
-			SetConsoleTextAttribute(handle,TA.GhostTextAttr);
-			printf(">> %6s\t%d  << Ваш результат",NameList[i],ScoreList[i]);
-			SetConsoleTextAttribute(handle,TA.BorderTextAttr);
-		}
-		else printf("   %6s\t%d",NameList[i],ScoreList[i]);
-	}
-	Pos.X=SizeWin.X-7;
-	Pos.Y=SizeWin.Y+22;
-	GotoXY(Pos);
-	SetConsoleTextAttribute(handle,TA.LineTextAttr);
-	printf("Нажмите 'Esc', чтобы выйти в меню");
-	SetConsoleTextAttribute(handle,TA.BorderTextAttr);
 }
